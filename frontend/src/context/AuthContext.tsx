@@ -72,12 +72,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUserEmail(email)
   }
 
-  const logout = async () => {
-    // Clear state first — this triggers ProtectedRoute to redirect immediately
+  const logout = () => {
+    // Clear state and fire-and-forget the server cookie cleanup
     setIsAuthenticated(false)
     setUserEmail(null)
-    // Then clean up server-side cookie in the background
     apiClient.post('/auth/logout').catch(() => {})
+    // Hard redirect — most reliable way to clear all state and show login
+    window.location.href = '/login'
   }
 
   return (
