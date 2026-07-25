@@ -1,29 +1,22 @@
 """
 Cookie management.
 
-Cross-site cookie requirement (production):
-  Frontend: lead-desk-mini-sage.vercel.app  (vercel.app domain)
-  Backend:  leakdesk-mini-production.up.railway.app  (railway.app domain)
-
-  These are DIFFERENT domains. Browsers block SameSite=Lax cookies cross-site.
-  Production must use SameSite=None; Secure for cookies to be sent/stored.
-
-  SameSite=None requires Secure=True (HTTPS only) — both Railway and Vercel
-  use HTTPS so this is safe.
+SameSite=None; Secure required for cross-site cookies (Vercel + Railway different domains).
+Settings are read inside each function call — not cached at module load time.
 """
 
 from fastapi import Response
 from app.core.config import get_settings
-
-settings = get_settings()
 
 ACCESS_COOKIE_NAME = "access_token"
 REFRESH_COOKIE_NAME = "refresh_token"
 
 
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
-    secure = settings.cookie_secure          # True in production
-    samesite = settings.cookie_samesite      # "none" in production, "lax" in dev
+    # Read settings fresh — never use module-level cached settings for cookies
+    s = get_settings()
+    secure = s.cookie_secure      # True in production (auto)
+    samesite = s.cookie_samesite  # "none" in production, "lax" in dev
 
     response.set_cookie(
         key=ACCESS_COOKIE_NAME,
@@ -31,9 +24,9 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str) 
         httponly=True,
         secure=secure,
         samesite=samesite,  # type: ignore[arg-type]
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        max_age=s.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
-        domain=settings.COOKIE_DOMAIN or None,
+        domain=s.COOKIE_DOMAIN or None,
     )
     response.set_cookie(
         key=REFRESH_COOKIE_NAME,
@@ -41,20 +34,21 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str) 
         httponly=True,
         secure=secure,
         samesite=samesite,  # type: ignore[arg-type]
-        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        max_age=s.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
         path="/api/v1/auth",
-        domain=settings.COOKIE_DOMAIN or None,
+        domain=s.COOKIE_DOMAIN or None,
     )
 
 
 def clear_auth_cookies(response: Response) -> None:
-    secure = settings.cookie_secure
-    samesite = settings.cookie_samesite
+    s = get_settings()
+    secure = s.cookie_secure
+    samesite = s.cookie_samesite
 
     response.delete_cookie(
         key=ACCESS_COOKIE_NAME,
         path="/",
-        domain=settings.COOKIE_DOMAIN or None,
+        domain=s.COOKIE_DOMAIN or None,
         httponly=True,
         secure=secure,
         samesite=samesite,  # type: ignore[arg-type]
@@ -62,7 +56,7 @@ def clear_auth_cookies(response: Response) -> None:
     response.delete_cookie(
         key=REFRESH_COOKIE_NAME,
         path="/api/v1/auth",
-        domain=settings.COOKIE_DOMAIN or None,
+        domain=s.COOKIE_DOMAIN or None,
         httponly=True,
         secure=secure,
         samesite=samesite,  # type: ignore[arg-type]

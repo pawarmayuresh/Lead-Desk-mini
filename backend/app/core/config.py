@@ -62,3 +62,9 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+# Force reload settings (call after env var changes in tests)
+def reload_settings() -> Settings:
+    get_settings.cache_clear()
+    return get_settings()
