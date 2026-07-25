@@ -1,6 +1,4 @@
 [deploy]
 startCommand = "bash start.sh"
-healthcheckPath = "/health"
-healthcheckTimeout = 120
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
