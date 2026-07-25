@@ -53,10 +53,10 @@ async def add_security_headers(request: Request, call_next) -> Response:
     if settings.is_production:
         csp = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com; "
-            "img-src 'self' data: blob:; "
+            "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
+            "font-src 'self' fonts.gstatic.com; "
+            "img-src 'self' data: blob: fastapi.tiangolo.com; "
             f"connect-src 'self' {' '.join(settings.allowed_origins_list)};"
         )
     else:
