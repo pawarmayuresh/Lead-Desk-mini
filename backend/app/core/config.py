@@ -30,7 +30,6 @@ class Settings(BaseSettings):
     @field_validator("COOKIE_DOMAIN", mode="before")
     @classmethod
     def empty_str_to_none(cls, v: str | None) -> str | None:
-        """Railway sets unset vars as empty string — treat '' as None."""
         return None if v == "" else v
 
     @property
@@ -39,8 +38,19 @@ class Settings(BaseSettings):
 
     @property
     def cookie_secure(self) -> bool:
-        """Secure cookies are always enabled in production (HTTPS required)."""
         return self.COOKIE_SECURE or self.is_production
+
+    @property
+    def cookie_samesite(self) -> str:
+        """
+        Cross-site cookie requirement:
+        When frontend and backend are on different domains (Vercel + Railway),
+        cookies MUST use SameSite=None; Secure to be sent cross-site.
+        SameSite=Lax blocks cookies from being stored cross-site entirely.
+        """
+        if self.is_production:
+            return "none"  # Required for cross-site cookies
+        return self.COOKIE_SAMESITE
 
     @property
     def allowed_origins_list(self) -> list[str]:

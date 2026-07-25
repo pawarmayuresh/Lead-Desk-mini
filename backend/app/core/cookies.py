@@ -1,15 +1,15 @@
 """
-Cookie management utilities.
+Cookie management.
 
-Why HTTP-only cookies?
-  - JavaScript cannot read HTTP-only cookies → XSS cannot steal tokens
-  - Secure flag ensures cookies only travel over HTTPS in production
-  - SameSite=Lax blocks CSRF for cross-site requests (GET allowed, mutations blocked)
-  - Path=/ ensures cookie is sent with all API requests
+Cross-site cookie requirement (production):
+  Frontend: lead-desk-mini-sage.vercel.app  (vercel.app domain)
+  Backend:  leakdesk-mini-production.up.railway.app  (railway.app domain)
 
-Production behaviour:
-  - settings.cookie_secure property auto-returns True when APP_ENV=production
-  - This means even if COOKIE_SECURE env var is omitted, production is always secure
+  These are DIFFERENT domains. Browsers block SameSite=Lax cookies cross-site.
+  Production must use SameSite=None; Secure for cookies to be sent/stored.
+
+  SameSite=None requires Secure=True (HTTPS only) — both Railway and Vercel
+  use HTTPS so this is safe.
 """
 
 from fastapi import Response
@@ -22,15 +22,15 @@ REFRESH_COOKIE_NAME = "refresh_token"
 
 
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
-    """Set both tokens as HTTP-only cookies. Secure flag auto-enables in production."""
-    secure = settings.cookie_secure  # True if APP_ENV=production
+    secure = settings.cookie_secure          # True in production
+    samesite = settings.cookie_samesite      # "none" in production, "lax" in dev
 
     response.set_cookie(
         key=ACCESS_COOKIE_NAME,
         value=access_token,
         httponly=True,
         secure=secure,
-        samesite=settings.COOKIE_SAMESITE,  # type: ignore[arg-type]
+        samesite=samesite,  # type: ignore[arg-type]
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
         domain=settings.COOKIE_DOMAIN or None,
@@ -40,16 +40,16 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str) 
         value=refresh_token,
         httponly=True,
         secure=secure,
-        samesite=settings.COOKIE_SAMESITE,  # type: ignore[arg-type]
+        samesite=samesite,  # type: ignore[arg-type]
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-        path="/api/v1/auth",   # Scoped — only sent to auth endpoints
+        path="/api/v1/auth",
         domain=settings.COOKIE_DOMAIN or None,
     )
 
 
 def clear_auth_cookies(response: Response) -> None:
-    """Clear both cookies on logout. Paths must match set_cookie exactly."""
     secure = settings.cookie_secure
+    samesite = settings.cookie_samesite
 
     response.delete_cookie(
         key=ACCESS_COOKIE_NAME,
@@ -57,7 +57,7 @@ def clear_auth_cookies(response: Response) -> None:
         domain=settings.COOKIE_DOMAIN or None,
         httponly=True,
         secure=secure,
-        samesite=settings.COOKIE_SAMESITE,  # type: ignore[arg-type]
+        samesite=samesite,  # type: ignore[arg-type]
     )
     response.delete_cookie(
         key=REFRESH_COOKIE_NAME,
@@ -65,5 +65,5 @@ def clear_auth_cookies(response: Response) -> None:
         domain=settings.COOKIE_DOMAIN or None,
         httponly=True,
         secure=secure,
-        samesite=settings.COOKIE_SAMESITE,  # type: ignore[arg-type]
+        samesite=samesite,  # type: ignore[arg-type]
     )
