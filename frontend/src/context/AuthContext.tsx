@@ -73,14 +73,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const logout = async () => {
-    try {
-      await apiClient.post('/auth/logout')
-    } catch {
-      // Even if request fails, clear local state
-    } finally {
-      setIsAuthenticated(false)
-      setUserEmail(null)
-    }
+    // Clear state first — this triggers ProtectedRoute to redirect immediately
+    setIsAuthenticated(false)
+    setUserEmail(null)
+    // Then clean up server-side cookie in the background
+    apiClient.post('/auth/logout').catch(() => {})
   }
 
   return (

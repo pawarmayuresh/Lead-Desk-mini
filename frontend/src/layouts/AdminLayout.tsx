@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Zap, LogOut, LayoutDashboard } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -7,11 +6,9 @@ import { Button } from '../components/common/Button'
 
 export const AdminLayout = ({ children }: { children: ReactNode }) => {
   const { logout } = useAuth()
-  const navigate = useNavigate()
 
-  const handleLogout = async () => {
-    await logout()   // clears server-side cookies via POST /auth/logout
-    navigate('/login')
+  const handleLogout = () => {
+    logout()  // sets isAuthenticated=false instantly → ProtectedRoute redirects
   }
 
   return (
