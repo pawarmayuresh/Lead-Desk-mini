@@ -1,5 +1,7 @@
-from pydantic_settings import BaseSettings
 from functools import lru_cache
+
+from pydantic import field_validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -9,22 +11,27 @@ class Settings(BaseSettings):
     # JWT
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
-
-    # Access token: short-lived (15 min) — reduces window if stolen
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
-
-    # Refresh token: long-lived (7 days) — stored in separate HTTP-only cookie
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # App
     APP_ENV: str = "development"
-    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:3000"
+    ALLOWED_ORIGINS: str = (
+        "http://localhost:5173,http://localhost:5174,"
+        "http://localhost:5175,http://localhost:5176,"
+        "http://localhost:3000"
+    )
 
-    # Cookie settings
-    # Secure=True in production (HTTPS only), False in local dev (HTTP)
-    COOKIE_SECURE: bool = False  # Set True in production via env var
+    # Cookie
+    COOKIE_SECURE: bool = False
     COOKIE_SAMESITE: str = "lax"
     COOKIE_DOMAIN: str | None = None
+
+    @field_validator("COOKIE_DOMAIN", mode="before")
+    @classmethod
+    def empty_str_to_none(cls, v: str | None) -> str | None:
+        """Railway sets unset vars as empty string — treat '' as None."""
+        return None if v == "" else v
 
     @property
     def is_production(self) -> bool:
@@ -32,12 +39,12 @@ class Settings(BaseSettings):
 
     @property
     def cookie_secure(self) -> bool:
-        """Auto-enable secure cookies in production regardless of env var."""
+        """Secure cookies are always enabled in production (HTTPS required)."""
         return self.COOKIE_SECURE or self.is_production
 
     @property
     def allowed_origins_list(self) -> list[str]:
-        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
+        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
