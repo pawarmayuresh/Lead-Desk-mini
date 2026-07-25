@@ -60,7 +60,7 @@ class Lead(Base):
         nullable=False,
     )
     budget: Mapped[BudgetEnum] = mapped_column(
-        Enum(BudgetEnum, name="budget_enum"),
+        Enum(BudgetEnum, name="budget_enum", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
     )
     message: Mapped[str] = mapped_column(
