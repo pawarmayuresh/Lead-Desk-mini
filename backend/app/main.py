@@ -16,7 +16,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import get_settings
 from app.core.logging_config import configure_logging
@@ -27,8 +26,8 @@ configure_logging()
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# Rate limiter — shared instance, used by auth routes
-limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+# Rate limiter — only applied explicitly to login route (no global default)
+limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
     title="LeadDesk Mini Pro API",
@@ -48,10 +47,6 @@ app = FastAPI(
 app.state.limiter = limiter
 
 # ─── Middleware ────────────────────────────────────────────────────────────────
-
-# Rate limiting middleware
-app.add_middleware(SlowAPIMiddleware)
-
 # CORS — must be configured correctly for cookie authentication
 # Why allow_credentials=True?
 #   Required for browser to send/receive cookies cross-origin.
