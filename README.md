@@ -503,11 +503,9 @@ The frontend and backend are on different domains (Vercel vs Railway). `SameSite
 
 ## 19. AI Usage Disclosure
 
-GitHub Copilot and Claude assisted with boilerplate generation including Pydantic schema structures, Tailwind class suggestions, Alembic migration scaffolding, and Framer Motion animation patterns.
+AI was used as an engineering assistant throughout the project to accelerate research, validate implementation approaches, and review architectural decisions rather than to generate a complete solution. I primarily used Kiro as my development IDE, with Cursor assisting in targeted code generation and refactoring. ChatGPT was used to understand the product requirements, refine the PRD, evaluate system architecture, compare authentication and database design options, review deployment strategies, and improve technical documentation. Claude was mainly used to generate initial boilerplate code and implementation scaffolding, which I then refactored and integrated into the project. I also consulted different AI models for researching best practices in full-stack development, security, deployment, and software architecture to compare multiple perspectives before making implementation decisions.
 
-All generated code was reviewed, understood, and modified to match the project's architecture. Business logic (auth flow, rate limiting approach, cookie security decisions, database design choices), security decisions (SameSite cookie strategy, constant-time auth, token type claims), and all architectural choices were made independently.
-
-Generated UI components were restructured to follow the project's component hierarchy and design system. Generated backend code was refactored to follow the layered architecture (repository → service → route) pattern.
+After using AI-generated suggestions, I reviewed the output, removed unnecessary complexity, reorganised the project structure, refined the UI/UX, strengthened the authentication flow, improved the database design, and adapted the implementation to fit the scope of this assignment. All final architectural decisions, code integration, debugging, testing, deployment, and documentation were completed through my own judgement to ensure the delivered solution accurately reflects my understanding and engineering approach.
 
 ---
 
