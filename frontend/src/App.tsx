@@ -15,6 +15,7 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 1000 * 60,
       refetchOnWindowFocus: false,
+      retry: false,  // don't retry on 401/403 — causes noise after logout
     },
   },
 })

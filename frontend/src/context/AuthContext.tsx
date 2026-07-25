@@ -74,7 +74,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      // Tell server to clear the cookies server-side
       await apiClient.post('/auth/logout')
     } catch {
       // Even if request fails, clear local state
