@@ -1,13 +1,12 @@
 """
 Auth routes — presentation layer only.
-Delegates all logic to AuthService via dependency injection.
+Rate limiting applied inside handler (not middleware) to avoid CORS preflight conflicts.
 """
 
 import logging
 from fastapi import APIRouter, Cookie, Depends, Request, Response, status
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
+from app.core.rate_limit import check_login_rate_limit
 from app.dependencies.services import get_auth_service
 from app.middleware.auth import get_current_user
 from app.models.user import User
@@ -24,22 +23,22 @@ from app.core.cookies import set_auth_cookies, clear_auth_cookies, REFRESH_COOKI
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
-limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post(
     "/login",
     response_model=TokenResponse,
     summary="Admin login",
-    description="Rate limited: 5 attempts/minute per IP. Sets HTTP-only cookies.",
+    description="Rate limited: 5 attempts/minute per IP.",
 )
-@limiter.limit("5/minute")
 def login(
     request: Request,
     response: Response,
     payload: LoginRequest,
     service: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
+    # Rate limit check runs inside handler — never touches OPTIONS preflight
+    check_login_rate_limit(request)
     access_token, refresh_token = service.login(payload.email, payload.password)
     set_auth_cookies(response, access_token, refresh_token)
     return TokenResponse(access_token=access_token)
@@ -49,7 +48,6 @@ def login(
     "/refresh",
     response_model=RefreshResponse,
     summary="Rotate tokens",
-    description="Issues new access + refresh tokens. Requires valid refresh cookie.",
 )
 def refresh_token(
     response: Response,
@@ -71,7 +69,6 @@ def refresh_token(
     "/logout",
     response_model=LogoutResponse,
     summary="Logout",
-    description="Clears auth cookies server-side.",
 )
 def logout(response: Response) -> LogoutResponse:
     clear_auth_cookies(response)
@@ -83,7 +80,6 @@ def logout(response: Response) -> LogoutResponse:
     "/me",
     response_model=AuthStatusResponse,
     summary="Session check",
-    description="Returns current user if cookie session is valid.",
 )
 def get_me(current_user: User = Depends(get_current_user)) -> AuthStatusResponse:
     return AuthStatusResponse(authenticated=True, email=current_user.email)
